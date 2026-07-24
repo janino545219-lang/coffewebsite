@@ -1,334 +1,194 @@
-import React, { useState, useMemo } from 'react';
-import { Search, Filter, Star, Plus, MapPin, Flame, Check, SlidersHorizontal, X } from 'lucide-react';
-import { INITIAL_MENU_ITEMS } from '../../data/mockData';
-import { Category, MenuItem } from '../../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Filter, ShoppingBag, X } from 'lucide-react';
+import { ALL_PRODUCTS } from '../../data/mockData';
+import { MenuItem } from '../../types';
 import { useCart } from '../../context/CartContext';
+import { gsap } from 'gsap';
 
 export const MenuSection: React.FC = () => {
-  const { addToCart } = useCart();
-  const [activeCategory, setActiveCategory] = useState<Category>('All');
+  const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDietary, setSelectedDietary] = useState<string>('All');
+  const [selectedProduct, setSelectedProduct] = useState<MenuItem | null>(null);
+  const { addToCart } = useCart();
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
-  // Customizer modal state
-  const [customizingItem, setCustomizingItem] = useState<MenuItem | null>(null);
-  const [selectedSize, setSelectedSize] = useState<'Standard' | 'Grand' | 'Reserve'>('Standard');
-  const [selectedMilk, setSelectedMilk] = useState<'Whole' | 'Oat' | 'Almond' | 'Soy' | 'None'>('Oat');
-  const [selectedSweetness, setSelectedSweetness] = useState<'100%' | '75%' | '50%' | '25%' | 'Unsweetened'>('100%');
-  const [specialNotes, setSpecialNotes] = useState('');
+  const categories = ['All', 'Espresso', 'Pour Over', 'Cold Brew', 'Tea', 'Pastries', 'Beans'];
 
-  const categories: Category[] = [
-    'All',
-    'Hot Coffee',
-    'Iced Coffee',
-    'Espresso',
-    'Non-Coffee',
-    'Pastries',
-    'Desserts',
-  ];
+  const filteredProducts = ALL_PRODUCTS.filter(product => {
+    const matchesCategory = activeCategory === 'All' || product.category === activeCategory;
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          product.description.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
-  const filteredItems = useMemo(() => {
-    return INITIAL_MENU_ITEMS.filter((item) => {
-      const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
-      const matchesSearch =
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.ingredients.some((ing) => ing.toLowerCase().includes(searchQuery.toLowerCase()));
-      const matchesDietary =
-        selectedDietary === 'All' ||
-        item.dietaryTags?.includes(selectedDietary as any);
+  // Entrance animation
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.from('.menu-header', {
+        y: 40, opacity: 0, duration: 0.8,
+        scrollTrigger: { trigger: sectionRef.current, start: 'top 80%' }
+      });
+    }, sectionRef);
+    return () => ctx.revert();
+  }, []);
 
-      return matchesCategory && matchesSearch && matchesDietary;
-    });
-  }, [activeCategory, searchQuery, selectedDietary]);
-
-  const handleOpenCustomize = (item: MenuItem) => {
-    setCustomizingItem(item);
-    setSelectedSize('Standard');
-    setSelectedMilk('Oat');
-    setSelectedSweetness('100%');
-    setSpecialNotes('');
-  };
-
-  const handleConfirmAddToCart = () => {
-    if (!customizingItem) return;
-    addToCart(customizingItem, {
-      size: selectedSize,
-      milk: selectedMilk,
-      sweetness: selectedSweetness,
-      notes: specialNotes,
-      quantity: 1,
-    });
-    setCustomizingItem(null);
-  };
+  // Grid layout animation on filter change
+  useEffect(() => {
+    if (gridRef.current) {
+      gsap.fromTo(gridRef.current.children, 
+        { scale: 0.9, opacity: 0, y: 20 },
+        { scale: 1, opacity: 1, y: 0, duration: 0.4, stagger: 0.05, ease: 'back.out(1.2)' }
+      );
+    }
+  }, [activeCategory, searchQuery]);
 
   return (
-    <section id="menu" className="py-24 bg-coffee-950 relative overflow-hidden border-t border-amber-500/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* HEADER */}
-        <div className="text-center max-w-3xl mx-auto space-y-4 mb-12">
-          <span className="text-xs uppercase tracking-[0.3em] text-amber-400 font-mono">
-            Artisanal Offerings
-          </span>
-          <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-stone-100">
-            Explore Our <span className="text-gold-gradient">Café Menu</span>
+    <section ref={sectionRef} id="menu" className="py-24 bg-coffee-950 relative">
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent"></div>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="menu-header text-center max-w-3xl mx-auto mb-16">
+          <h2 className="font-serif text-4xl sm:text-5xl font-bold text-stone-100 mb-6">
+            The <span className="text-gold-gradient">Collection</span>
           </h2>
-          <p className="text-sm text-amber-100/70 font-light">
-            Every beverage and pastry is crafted to order with single-origin beans, organic dairy options, and handcrafted natural syrups.
-          </p>
-        </div>
-
-        {/* SEARCH & FILTER BAR */}
-        <div className="mb-10 space-y-6">
-          <div className="flex flex-col md:flex-row items-center gap-4">
-            {/* SEARCH INPUT */}
-            <div className="relative flex-1 w-full">
-              <Search className="w-4 h-4 text-amber-400 absolute left-4 top-3.5" />
-              <input
-                type="text"
-                placeholder="Search coffee, ingredients, or tasting notes (e.g. Mocha, Yirgacheffe)..."
+          
+          {/* SEARCH & FILTER BAR */}
+          <div className="glass-panel p-2 rounded-2xl flex flex-col sm:flex-row gap-2 max-w-2xl mx-auto">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-200/50" />
+              <input 
+                type="text" 
+                placeholder="Search beverages, pastries, beans..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 rounded-xl bg-coffee-900/60 border border-amber-500/20 text-amber-100 placeholder-amber-200/40 text-sm focus:outline-none focus:border-amber-400 backdrop-blur-md"
+                className="w-full bg-transparent border-none focus:ring-0 text-sm text-stone-100 placeholder:text-amber-200/30 pl-10 py-3"
               />
-              {searchQuery && (
+            </div>
+            <div className="hidden sm:block w-px h-8 bg-amber-500/20 self-center"></div>
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none px-2 py-1">
+              <Filter className="w-4 h-4 text-amber-400 shrink-0" />
+              {categories.slice(0, 3).map(cat => (
                 <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-3.5 text-amber-200/50 hover:text-white"
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`shrink-0 px-4 py-1.5 rounded-xl text-xs font-bold tracking-wider transition-all ${
+                    activeCategory === cat 
+                      ? 'bg-amber-500 text-coffee-950 shadow-lg shadow-amber-500/20' 
+                      : 'text-amber-200/60 hover:text-amber-200 hover:bg-coffee-800'
+                  }`}
                 >
-                  <X className="w-4 h-4" />
+                  {cat}
                 </button>
-              )}
+              ))}
             </div>
-
-            {/* DIETARY SELECTOR */}
-            <div className="flex items-center gap-2 w-full md:w-auto">
-              <SlidersHorizontal className="w-4 h-4 text-amber-400 shrink-0" />
-              <select
-                value={selectedDietary}
-                onChange={(e) => setSelectedDietary(e.target.value)}
-                className="px-4 py-3 rounded-xl bg-coffee-900/60 border border-amber-500/20 text-amber-200 text-xs focus:outline-none focus:border-amber-400 backdrop-blur-md cursor-pointer w-full md:w-auto"
-              >
-                <option value="All" className="bg-coffee-950 text-stone-100">All Dietary Options</option>
-                <option value="Vegan" className="bg-coffee-950 text-stone-100">Vegan Only</option>
-                <option value="Organic" className="bg-coffee-950 text-stone-100">Organic Only</option>
-                <option value="Gluten-Free" className="bg-coffee-950 text-stone-100">Gluten-Free Only</option>
-              </select>
-            </div>
-          </div>
-
-          {/* CATEGORY CHIPS */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`px-5 py-2.5 rounded-full text-xs font-semibold tracking-wider uppercase whitespace-nowrap transition-all duration-300 border ${
-                  activeCategory === cat
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-coffee-950 border-amber-400 shadow-lg shadow-amber-500/20 scale-105'
-                    : 'bg-coffee-900/40 text-amber-200/70 border-amber-500/15 hover:border-amber-400/40 hover:text-amber-100'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
           </div>
         </div>
 
-        {/* MENU ITEMS GRID */}
-        {filteredItems.length === 0 ? (
-          <div className="py-16 text-center text-amber-200/50 space-y-3 bg-coffee-900/20 border border-amber-500/10 rounded-2xl">
-            <Filter className="w-10 h-10 mx-auto stroke-[1]" />
-            <p className="font-serif text-xl text-amber-100">No coffee creations match your search</p>
-            <p className="text-xs">Try clearing filters or searching for different keywords.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredItems.map((item) => (
-              <div
-                key={item.id}
-                className="group p-5 rounded-2xl bg-coffee-900/40 border border-amber-500/15 hover:border-amber-400/40 backdrop-blur-md transition-all duration-300 hover:shadow-xl hover:shadow-amber-500/10 flex flex-col justify-between"
-              >
-                <div className="space-y-3">
-                  <div className="relative h-48 rounded-xl overflow-hidden mb-3">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-coffee-950/90 via-transparent to-transparent" />
-                    
-                    <div className="absolute top-2 left-2 px-2.5 py-0.5 rounded-full bg-coffee-950/80 backdrop-blur-md border border-amber-500/20 text-[10px] uppercase font-semibold text-amber-300">
-                      {item.category}
-                    </div>
-
-                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-coffee-950/80 backdrop-blur-md border border-amber-500/20 flex items-center gap-1 text-[10px] font-mono text-amber-300">
-                      <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                      <span>{item.rating} ({item.reviewsCount})</span>
-                    </div>
-
-                    {item.calories && (
-                      <div className="absolute bottom-2 right-2 text-[10px] font-mono text-amber-200/80 bg-coffee-950/80 px-2 py-0.5 rounded border border-amber-500/20">
-                        {item.calories} kcal
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-serif text-lg font-bold text-amber-100 group-hover:text-amber-300 transition-colors">
-                      {item.name}
-                    </h3>
-                    <span className="font-serif text-lg font-bold text-gold-gradient shrink-0">
-                      ${item.price.toFixed(2)}
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-amber-100/60 font-light leading-relaxed line-clamp-2">
-                    {item.description}
-                  </p>
-
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {item.ingredients.map((ing) => (
-                      <span
-                        key={ing}
-                        className="text-[10px] px-2 py-0.5 rounded bg-coffee-950 border border-amber-500/10 text-amber-200/70"
-                      >
-                        {ing}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-4 mt-4 border-t border-coffee-800/60 flex items-center justify-between gap-3">
-                  <button
-                    onClick={() => handleOpenCustomize(item)}
-                    className="flex-1 py-2 px-3 rounded-xl bg-coffee-800/60 hover:bg-coffee-800 text-amber-200 border border-amber-500/20 text-xs font-semibold transition-all text-center"
-                  >
-                    Customize
-                  </button>
-                  <button
-                    onClick={() => addToCart(item)}
-                    className="p-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-coffee-950 font-bold transition-all shadow-md active:scale-95 flex items-center justify-center"
-                    title="Quick Add to Order"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
+        {/* MENU GRID */}
+        <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {filteredProducts.map((product: MenuItem) => (
+            <div 
+              key={product.id}
+              className="menu-item-card glass-panel-elevated rounded-[2rem] p-4 flex flex-col group cursor-pointer"
+              onClick={() => setSelectedProduct(product)}
+            >
+              <div className="relative h-48 rounded-xl overflow-hidden mb-4 bg-coffee-900">
+                <img 
+                  src={product.image} 
+                  alt={product.name}
+                  className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"
+                />
+                <div className="absolute top-2 right-2 glass-card px-2.5 py-1 rounded-lg backdrop-blur-md">
+                  <span className="font-serif font-bold text-amber-200">${product.price.toFixed(2)}</span>
                 </div>
               </div>
-            ))}
+              
+              <div className="flex-1 flex flex-col">
+                <h3 className="font-serif text-lg font-bold text-stone-100 mb-1">{product.name}</h3>
+                <p className="text-[11px] text-amber-200/50 uppercase tracking-widest font-mono mb-2">{product.category}</p>
+                <p className="text-sm text-amber-100/70 font-light line-clamp-2 mb-4 flex-1">
+                  {product.description}
+                </p>
+                
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addToCart(product);
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-coffee-900 hover:bg-amber-500 text-amber-400 hover:text-coffee-950 border border-amber-500/20 hover:border-transparent font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                >
+                  <ShoppingBag className="w-3.5 h-3.5" />
+                  <span>Quick Add</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {filteredProducts.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-amber-200/50 font-serif text-xl italic">No creations found matching your desire.</p>
+            <button 
+              onClick={() => {setSearchQuery(''); setActiveCategory('All');}}
+              className="mt-4 text-amber-400 text-sm font-bold tracking-widest uppercase hover:text-amber-300"
+            >
+              Clear Filters
+            </button>
           </div>
         )}
       </div>
 
-      {/* ITEM CUSTOMIZER MODAL */}
-      {customizingItem && (
+      {/* PRODUCT DETAIL MODAL (Simple implementation) */}
+      {selectedProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            onClick={() => setCustomizingItem(null)}
-            className="absolute inset-0 bg-black/75 backdrop-blur-md"
-          />
-          <div className="relative w-full max-w-md bg-coffee-950 border border-amber-500/30 rounded-2xl p-6 shadow-2xl z-10 space-y-5 animate-scaleUp">
-            <div className="flex items-start justify-between border-b border-coffee-800 pb-3">
-              <div>
-                <h3 className="font-serif text-xl font-bold text-amber-100">{customizingItem.name}</h3>
-                <p className="text-xs text-amber-200/60">Customize your order preferences</p>
+          <div className="absolute inset-0 bg-coffee-950/80 backdrop-blur-sm" onClick={() => setSelectedProduct(null)}></div>
+          <div className="relative w-full max-w-2xl bg-coffee-950 border border-amber-500/20 rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row animate-scaleUp">
+            <button 
+              onClick={() => setSelectedProduct(null)}
+              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="w-full md:w-1/2 h-64 md:h-auto relative">
+              <img src={selectedProduct.image} alt={selectedProduct.name} className="w-full h-full object-cover" />
+            </div>
+            
+            <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col">
+              <span className="text-[10px] text-amber-400 uppercase tracking-widest font-mono mb-2">{selectedProduct.category}</span>
+              <h3 className="font-serif text-3xl font-bold text-stone-100 mb-2">{selectedProduct.name}</h3>
+              <p className="font-serif text-xl text-amber-200 mb-6">${selectedProduct.price.toFixed(2)}</p>
+              
+              <p className="text-sm text-amber-100/70 font-light mb-6 flex-1">
+                {selectedProduct.description}
+              </p>
+              
+              {/* Customization Options (Mock) */}
+              <div className="space-y-4 mb-8">
+                <div>
+                  <p className="text-xs font-bold text-stone-200 mb-2 uppercase tracking-wider">Size</p>
+                  <div className="flex gap-2">
+                    {['Standard', 'Large (+$1.00)'].map((size, i) => (
+                      <button key={size} className={`px-4 py-2 rounded-xl border text-xs font-semibold ${i === 0 ? 'border-amber-500 bg-amber-500/10 text-amber-300' : 'border-amber-500/20 text-amber-200/60'}`}>
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <button
-                onClick={() => setCustomizingItem(null)}
-                className="text-amber-200/50 hover:text-white p-1"
+              
+              <button 
+                onClick={() => {
+                  addToCart(selectedProduct);
+                  setSelectedProduct(null);
+                }}
+                className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-coffee-950 font-bold text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
               >
-                <X className="w-5 h-5" />
+                <ShoppingBag className="w-4 h-4" />
+                <span>Add to Order</span>
               </button>
             </div>
-
-            {/* SIZE SELECTION */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-amber-300 uppercase tracking-wider block">
-                Select Size
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {(['Standard', 'Grand', 'Reserve'] as const).map((sz) => (
-                  <button
-                    key={sz}
-                    onClick={() => setSelectedSize(sz)}
-                    className={`py-2 px-3 rounded-lg text-xs font-medium border transition-all ${
-                      selectedSize === sz
-                        ? 'bg-amber-500 text-coffee-950 border-amber-400 font-bold'
-                        : 'bg-coffee-900/60 text-amber-200 border-amber-500/20 hover:border-amber-400'
-                    }`}
-                  >
-                    {sz} {sz === 'Grand' ? '(+25%)' : sz === 'Reserve' ? '(+50%)' : ''}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* MILK SELECTION (IF APPLICABLE) */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-amber-300 uppercase tracking-wider block">
-                Milk Choice
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {(['Whole', 'Oat', 'Almond', 'Soy', 'None'] as const).map((mk) => (
-                  <button
-                    key={mk}
-                    onClick={() => setSelectedMilk(mk)}
-                    className={`py-1.5 px-2 rounded-lg text-xs font-medium border transition-all ${
-                      selectedMilk === mk
-                        ? 'bg-amber-500 text-coffee-950 border-amber-400 font-bold'
-                        : 'bg-coffee-900/60 text-amber-200 border-amber-500/20 hover:border-amber-400'
-                    }`}
-                  >
-                    {mk}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* SWEETNESS */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-amber-300 uppercase tracking-wider block">
-                Sweetness Level
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {(['100%', '75%', '50%', '25%', 'Unsweetened'] as const).map((sw) => (
-                  <button
-                    key={sw}
-                    onClick={() => setSelectedSweetness(sw)}
-                    className={`py-1.5 px-2 rounded-lg text-xs font-medium border transition-all ${
-                      selectedSweetness === sw
-                        ? 'bg-amber-500 text-coffee-950 border-amber-400 font-bold'
-                        : 'bg-coffee-900/60 text-amber-200 border-amber-500/20 hover:border-amber-400'
-                    }`}
-                  >
-                    {sw}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* SPECIAL INSTRUCTIONS */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-amber-300 uppercase tracking-wider block">
-                Barista Notes
-              </label>
-              <input
-                type="text"
-                placeholder="Extra hot, double cup, light foam..."
-                value={specialNotes}
-                onChange={(e) => setSpecialNotes(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-coffee-900 border border-amber-500/20 text-xs text-amber-100 focus:outline-none focus:border-amber-400"
-              />
-            </div>
-
-            {/* ADD TO CART ACTION */}
-            <button
-              onClick={handleConfirmAddToCart}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-coffee-950 font-bold text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2"
-            >
-              <Check className="w-4 h-4" />
-              <span>Add Customized Item to Bag</span>
-            </button>
           </div>
         </div>
       )}

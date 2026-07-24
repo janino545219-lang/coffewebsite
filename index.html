@@ -5,13 +5,102 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☕</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AURA ROAST — Artisanal Micro-Roastery & Luxury Café</title>
-    <meta name="description" content="Experience the ultimate luxury in coffee craftsmanship. Single-origin specialty coffee, artisanal pastries, and immersive glassmorphic ambiance." />
-    <!-- Google Fonts -->
+    <meta name="description" content="Experience the ultimate luxury in coffee craftsmanship. Single-origin specialty coffee, artisanal pastries, and immersive glassmorphic ambiance. Award-winning café in San Francisco." />
+    <meta name="keywords" content="specialty coffee, luxury café, single-origin, artisanal roastery, San Francisco coffee, premium espresso" />
+    <meta property="og:title" content="AURA ROAST — Artisanal Micro-Roastery & Luxury Café" />
+    <meta property="og:description" content="Experience coffee like never before. Cinematic luxury café experience with single-origin specialty coffee." />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#0f0704" />
+    <!-- Google Fonts — Preconnect & Load -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Loading Screen Inline Styles (render-blocking on purpose for smooth first paint) -->
+    <style>
+      #loading-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #0f0704;
+        transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.8s;
+      }
+      #loading-screen.hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      #loading-screen .loader-brand {
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: 2.2rem;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        background: linear-gradient(135deg, #f7f1e5 0%, #d4a373 50%, #e6b800 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: loaderPulse 2s ease-in-out infinite;
+      }
+      #loading-screen .loader-sub {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 0.65rem;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: rgba(212, 163, 115, 0.5);
+        margin-top: 0.5rem;
+      }
+      #loading-screen .loader-bar-container {
+        width: 160px;
+        height: 2px;
+        background: rgba(212, 163, 115, 0.15);
+        border-radius: 2px;
+        margin-top: 2rem;
+        overflow: hidden;
+      }
+      #loading-screen .loader-bar {
+        width: 0%;
+        height: 100%;
+        background: linear-gradient(90deg, #d4a373, #e6b800);
+        border-radius: 2px;
+        animation: loaderProgress 2s ease-in-out forwards;
+      }
+      #loading-screen .loader-ring {
+        width: 48px;
+        height: 48px;
+        border: 2px solid rgba(212, 163, 115, 0.1);
+        border-top-color: #d4a373;
+        border-radius: 50%;
+        animation: loaderSpin 1s linear infinite;
+        margin-bottom: 1.5rem;
+      }
+      @keyframes loaderSpin {
+        to { transform: rotate(360deg); }
+      }
+      @keyframes loaderPulse {
+        0%, 100% { opacity: 0.7; filter: drop-shadow(0 0 10px rgba(212, 163, 115, 0.3)); }
+        50% { opacity: 1; filter: drop-shadow(0 0 25px rgba(212, 163, 115, 0.6)); }
+      }
+      @keyframes loaderProgress {
+        0% { width: 0%; }
+        60% { width: 75%; }
+        100% { width: 100%; }
+      }
+    </style>
   </head>
   <body class="bg-coffee-950 text-stone-100 font-sans selection:bg-accent-gold/30 selection:text-amber-200 antialiased overflow-x-hidden">
+    <!-- CINEMATIC LOADING SCREEN -->
+    <div id="loading-screen" role="status" aria-label="Loading AURA ROAST">
+      <div class="loader-ring"></div>
+      <div class="loader-brand">AURA ROAST</div>
+      <div class="loader-sub">Crafting Your Experience</div>
+      <div class="loader-bar-container">
+        <div class="loader-bar"></div>
+      </div>
+    </div>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

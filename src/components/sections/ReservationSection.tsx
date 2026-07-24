@@ -1,253 +1,176 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Calendar, Clock, Users, MapPin, CheckCircle2, Sparkles } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Calendar as CalendarIcon, Clock, Users, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { gsap } from 'gsap';
 
 export const ReservationSection: React.FC = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    date: '2026-07-25',
-    time: '11:00 AM',
-    guests: 2,
-    seating: 'Indoor Glasshouse' as 'Indoor Glasshouse' | 'Patio Garden' | 'Roastery Counter',
-    requests: '',
-  });
+  const [formState, setFormState] = useState({ date: '', time: '', guests: '2', specialRequests: '' });
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [bookingConfirmed, setBookingConfirmed] = useState<string | null>(null);
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo('.res-content', 
+        { y: 50, opacity: 0 },
+        { y: 0, opacity: 1, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: sectionRef.current, start: 'top 80%' }}
+      );
+      
+      gsap.fromTo(formRef.current,
+        { x: 50, opacity: 0 },
+        { x: 0, opacity: 1, duration: 1, delay: 0.2, ease: 'power3.out', scrollTrigger: { trigger: sectionRef.current, start: 'top 80%' }}
+      );
+    }, sectionRef);
+    return () => ctx.revert();
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
-    setTimeout(() => {
-      setIsSubmitting(false);
-      const resId = `RES-${Math.floor(1000 + Math.random() * 9000)}`;
-      setBookingConfirmed(resId);
-    }, 1200);
+    setIsSubmitted(true);
+    
+    // Success animation
+    gsap.fromTo('.success-msg', 
+      { scale: 0.8, opacity: 0 },
+      { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(1.5)' }
+    );
   };
 
   return (
-    <section id="reservation" className="py-24 bg-coffee-950 relative overflow-hidden border-t border-amber-500/10">
-      {/* Background ambient lighting */}
-      <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-amber-600/5 rounded-full blur-[140px] pointer-events-none" />
+    <section ref={sectionRef} id="reservation" className="py-24 relative overflow-hidden">
+      {/* Background with parallax image and dark overlay */}
+      <div className="absolute inset-0 bg-coffee-950 z-0">
+        <img 
+          src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=1920&q=80" 
+          alt="Cafe seating" 
+          className="w-full h-full object-cover opacity-20"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-coffee-950 via-coffee-950/80 to-transparent"></div>
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          {/* LEFT COLUMN: INFO */}
-          <motion.div
-            initial={{ opacity: 0, x: -40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: '-80px' }}
-            transition={{ duration: 0.8 }}
-            className="lg:col-span-5 space-y-6"
-          >
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold uppercase">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Guaranteed Seating</span>
-            </div>
-
-            <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-stone-100 leading-tight">
-              Reserve Your Table in Our <span className="text-gold-gradient">Glasshouse Sanctuary</span>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          
+          <div className="res-content space-y-6">
+            <h2 className="font-serif text-4xl sm:text-5xl font-bold text-stone-100">
+              Reserve Your <span className="text-gold-gradient">Experience</span>
             </h2>
-
-            <p className="text-sm text-amber-100/70 font-light leading-relaxed">
-              Whether you are planning a weekend cupping session, a business meeting, or an intimate dessert date, reserve your preferred lounge area in advance.
+            <p className="text-amber-100/70 font-light text-lg">
+              Secure your spot in our glasshouse. Whether it's a quiet morning espresso or an afternoon tasting flight, we ensure every detail is prepared for your arrival.
             </p>
-
-            <div className="space-y-4 pt-2">
-              <div className="p-4 rounded-xl bg-coffee-900/40 border border-amber-500/15 flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400">
-                  <MapPin className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-serif text-base font-bold text-amber-100">Three Signature Environments</h4>
-                  <p className="text-xs text-amber-200/60 font-light">
-                    Choose between the sunlit main Glasshouse, lush outdoor Patio Garden, or direct interactive Roastery Counter.
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-coffee-900/40 border border-amber-500/15 flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+            
+            <div className="pt-8 space-y-6">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
                   <Clock className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-serif text-base font-bold text-amber-100">Complementary Tasting Flight</h4>
-                  <p className="text-xs text-amber-200/60 font-light">
-                    Reservations for 4+ guests include a complimentary single-origin espresso cupping shot for each diner.
-                  </p>
+                  <h4 className="font-bold text-stone-200">Opening Hours</h4>
+                  <p className="text-sm text-amber-100/60 mt-1">Mon - Fri: 7am - 7pm<br/>Sat - Sun: 8am - 8pm</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-stone-200">Group Tastings</h4>
+                  <p className="text-sm text-amber-100/60 mt-1">For groups larger than 6, please contact us directly to arrange a private tasting session.</p>
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
 
-          {/* RIGHT COLUMN: RESERVATION FORM CARD */}
-          <motion.div
-            initial={{ opacity: 0, x: 40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: '-80px' }}
-            transition={{ duration: 0.8 }}
-            className="lg:col-span-7 p-8 sm:p-10 rounded-3xl bg-coffee-900/50 border border-amber-500/20 backdrop-blur-xl shadow-2xl relative"
-          >
-            {bookingConfirmed ? (
-              <div className="py-12 text-center space-y-4 animate-scaleUp">
-                <div className="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto shadow-2xl">
-                  <CheckCircle2 className="w-10 h-10 animate-bounce" />
+          <div>
+            {!isSubmitted ? (
+              <form ref={formRef} onSubmit={handleSubmit} className="glass-panel-elevated p-8 sm:p-10 rounded-3xl space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* Date Input */}
+                  <div className="space-y-2 group">
+                    <label className="text-xs font-bold uppercase tracking-wider text-amber-200/60 flex items-center gap-2">
+                      <CalendarIcon className="w-3.5 h-3.5" /> Date
+                    </label>
+                    <input 
+                      type="date" 
+                      required
+                      value={formState.date}
+                      onChange={e => setFormState({...formState, date: e.target.value})}
+                      className="w-full bg-coffee-900/50 border border-amber-500/20 rounded-xl px-4 py-3 text-stone-200 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all custom-calendar-picker"
+                    />
+                  </div>
+                  
+                  {/* Time Input */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-amber-200/60 flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5" /> Time
+                    </label>
+                    <select 
+                      required
+                      value={formState.time}
+                      onChange={e => setFormState({...formState, time: e.target.value})}
+                      className="w-full bg-coffee-900/50 border border-amber-500/20 rounded-xl px-4 py-3 text-stone-200 focus:outline-none focus:border-amber-400 transition-all appearance-none"
+                    >
+                      <option value="" disabled>Select Time</option>
+                      <option value="08:00">08:00 AM</option>
+                      <option value="10:00">10:00 AM</option>
+                      <option value="12:00">12:00 PM</option>
+                      <option value="14:00">02:00 PM</option>
+                      <option value="16:00">04:00 PM</option>
+                    </select>
+                  </div>
                 </div>
-                <h3 className="font-serif text-3xl font-bold text-gold-gradient">Reservation Confirmed!</h3>
-                <p className="text-xs text-amber-100/70 max-w-sm mx-auto leading-relaxed">
-                  Thank you, <span className="font-bold text-amber-300">{formData.name}</span>. Your reservation <span className="font-mono text-amber-400 font-bold">{bookingConfirmed}</span> for {formData.guests} guests on {formData.date} at {formData.time} ({formData.seating}) has been placed.
-                </p>
-                <p className="text-[11px] text-amber-200/50">A confirmation email has been sent to {formData.email}.</p>
 
-                <button
-                  onClick={() => setBookingConfirmed(null)}
-                  className="mt-4 px-6 py-2.5 rounded-full bg-coffee-800 hover:bg-coffee-700 text-amber-200 text-xs font-semibold uppercase tracking-wider border border-amber-500/30"
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-amber-200/60 flex items-center gap-2">
+                    <Users className="w-3.5 h-3.5" /> Party Size
+                  </label>
+                  <select 
+                    value={formState.guests}
+                    onChange={e => setFormState({...formState, guests: e.target.value})}
+                    className="w-full bg-coffee-900/50 border border-amber-500/20 rounded-xl px-4 py-3 text-stone-200 focus:outline-none focus:border-amber-400 transition-all appearance-none"
+                  >
+                    {[1,2,3,4,5,6].map(num => (
+                      <option key={num} value={num}>{num} {num === 1 ? 'Guest' : 'Guests'}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-amber-200/60">Special Requests</label>
+                  <textarea 
+                    rows={3}
+                    value={formState.specialRequests}
+                    onChange={e => setFormState({...formState, specialRequests: e.target.value})}
+                    placeholder="E.g., Window seat preferred..."
+                    className="w-full bg-coffee-900/50 border border-amber-500/20 rounded-xl px-4 py-3 text-stone-200 focus:outline-none focus:border-amber-400 transition-all resize-none placeholder:text-stone-500"
+                  ></textarea>
+                </div>
+
+                <button 
+                  type="submit"
+                  className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-coffee-950 font-bold tracking-widest uppercase flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 transition-all group"
+                >
+                  <span>Confirm Reservation</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </form>
+            ) : (
+              <div className="success-msg glass-panel-elevated p-12 rounded-3xl text-center space-y-6 flex flex-col items-center justify-center h-full min-h-[400px]">
+                <div className="w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-4">
+                  <CheckCircle2 className="w-10 h-10" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-3xl font-bold text-stone-100 mb-2">Reservation Confirmed</h3>
+                  <p className="text-amber-100/60 font-light">We look forward to serving you on {formState.date} at {formState.time} for {formState.guests} guests.</p>
+                </div>
+                <button 
+                  onClick={() => setIsSubmitted(false)}
+                  className="text-amber-400 text-sm font-bold tracking-widest uppercase hover:text-amber-300 underline underline-offset-4 decoration-amber-500/30 hover:decoration-amber-400"
                 >
                   Make Another Booking
                 </button>
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <h3 className="font-serif text-2xl font-bold text-amber-100 mb-2">Book Your Experience</h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-semibold text-amber-300 uppercase tracking-wider block mb-1.5">
-                      Your Full Name
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Claire Beauchamp"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-coffee-950 border border-amber-500/20 text-xs text-amber-100 placeholder-amber-200/30 focus:outline-none focus:border-amber-400"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-amber-300 uppercase tracking-wider block mb-1.5">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      placeholder="claire@example.com"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-coffee-950 border border-amber-500/20 text-xs text-amber-100 placeholder-amber-200/30 focus:outline-none focus:border-amber-400"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-xs font-semibold text-amber-300 uppercase tracking-wider block mb-1.5">
-                      Date
-                    </label>
-                    <div className="relative">
-                      <Calendar className="w-4 h-4 text-amber-400 absolute left-3 top-3.5" />
-                      <input
-                        type="date"
-                        required
-                        value={formData.date}
-                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                        className="w-full pl-10 pr-3 py-3 rounded-xl bg-coffee-950 border border-amber-500/20 text-xs text-amber-100 focus:outline-none focus:border-amber-400"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-amber-300 uppercase tracking-wider block mb-1.5">
-                      Time Slot
-                    </label>
-                    <select
-                      value={formData.time}
-                      onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                      className="w-full px-3 py-3 rounded-xl bg-coffee-950 border border-amber-500/20 text-xs text-amber-100 focus:outline-none focus:border-amber-400 cursor-pointer"
-                    >
-                      <option value="08:30 AM" className="bg-coffee-950">08:30 AM</option>
-                      <option value="10:00 AM" className="bg-coffee-950">10:00 AM</option>
-                      <option value="11:30 AM" className="bg-coffee-950">11:30 AM</option>
-                      <option value="02:00 PM" className="bg-coffee-950">02:00 PM</option>
-                      <option value="04:30 PM" className="bg-coffee-950">04:30 PM</option>
-                      <option value="07:00 PM" className="bg-coffee-950">07:00 PM</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-amber-300 uppercase tracking-wider block mb-1.5">
-                      Party Size
-                    </label>
-                    <div className="relative">
-                      <Users className="w-4 h-4 text-amber-400 absolute left-3 top-3.5" />
-                      <select
-                        value={formData.guests}
-                        onChange={(e) => setFormData({ ...formData, guests: Number(e.target.value) })}
-                        className="w-full pl-10 pr-3 py-3 rounded-xl bg-coffee-950 border border-amber-500/20 text-xs text-amber-100 focus:outline-none focus:border-amber-400 cursor-pointer"
-                      >
-                        {[1, 2, 3, 4, 5, 6, 8, 10].map((num) => (
-                          <option key={num} value={num} className="bg-coffee-950">
-                            {num} {num === 1 ? 'Guest' : 'Guests'}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-amber-300 uppercase tracking-wider block mb-1.5">
-                    Seating Preference
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(['Indoor Glasshouse', 'Patio Garden', 'Roastery Counter'] as const).map((seat) => (
-                      <button
-                        type="button"
-                        key={seat}
-                        onClick={() => setFormData({ ...formData, seating: seat })}
-                        className={`py-2 px-2 rounded-lg text-[11px] font-medium border transition-all ${
-                          formData.seating === seat
-                            ? 'bg-amber-500 text-coffee-950 border-amber-400 font-bold'
-                            : 'bg-coffee-950 text-amber-200/70 border-amber-500/20 hover:border-amber-400'
-                        }`}
-                      >
-                        {seat}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-amber-300 uppercase tracking-wider block mb-1.5">
-                    Special Requests (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Anniversary celebration, high chair, quiet corner..."
-                    value={formData.requests}
-                    onChange={(e) => setFormData({ ...formData, requests: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl bg-coffee-950 border border-amber-500/20 text-xs text-amber-100 focus:outline-none focus:border-amber-400"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-coffee-950 font-bold text-xs uppercase tracking-wider shadow-xl shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <div className="w-5 h-5 border-2 border-coffee-950 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <span>Confirm Table Reservation</span>
-                  )}
-                </button>
-              </form>
             )}
-          </motion.div>
+          </div>
+
         </div>
       </div>
     </section>

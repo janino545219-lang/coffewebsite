@@ -397,9 +397,23 @@ export const REVENUE_ANALYTICS_DATA = [
   { day: 'Sun', revenue: 4800, orders: 210 }
 ];
 
-export const CATEGORY_SALES_DATA = [
+export const SALES_BY_CATEGORY = [
   { name: 'Hot Coffee', value: 42 },
   { name: 'Iced Coffee', value: 28 },
   { name: 'Espresso', value: 15 },
   { name: 'Pastries & Desserts', value: 15 }
 ];
+
+export const POPULAR_TIMES = [
+  { time: '6 AM', orders: 12 },
+  { time: '8 AM', orders: 45 },
+  { time: '10 AM', orders: 38 },
+  { time: '12 PM', orders: 55 },
+  { time: '2 PM', orders: 42 },
+  { time: '4 PM', orders: 28 },
+  { time: '6 PM', orders: 15 },
+];
+
+export const FEATURED_PRODUCTS = INITIAL_MENU_ITEMS.filter(item => item.isFeatured);
+export const ALL_PRODUCTS = INITIAL_MENU_ITEMS;
+

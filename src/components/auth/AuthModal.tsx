@@ -1,205 +1,175 @@
-import React, { useState } from 'react';
-import { X, Mail, Lock, User as UserIcon, Coffee, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Mail, Lock, LogIn, UserPlus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { gsap } from 'gsap';
 
 export const AuthModal: React.FC = () => {
-  const { isAuthModalOpen, setIsAuthModalOpen, login } = useAuth();
-  const [tab, setTab] = useState<'login' | 'signup'>('login');
-  
+  const { isAuthModalOpen, setIsAuthModalOpen, login, signup } = useAuth();
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [name, setName] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
-  if (!isAuthModalOpen) return null;
+  useEffect(() => {
+    if (isAuthModalOpen) {
+      gsap.to(overlayRef.current, { opacity: 1, duration: 0.3, ease: 'power2.out', display: 'flex' });
+      gsap.fromTo(modalRef.current, 
+        { scale: 0.95, opacity: 0, y: 20 },
+        { scale: 1, opacity: 1, y: 0, duration: 0.4, ease: 'back.out(1.2)' }
+      );
+    } else {
+      gsap.to(modalRef.current, { scale: 0.95, opacity: 0, y: 20, duration: 0.3, ease: 'power2.in' });
+      gsap.to(overlayRef.current, { 
+        opacity: 0, duration: 0.3, ease: 'power2.in', 
+        onComplete: () => {
+          if (overlayRef.current) overlayRef.current.style.display = 'none';
+        }
+      });
+      // Reset state
+      setError('');
+      setIsLoading(false);
+      setEmail('');
+      setPassword('');
+      setName('');
+    }
+  }, [isAuthModalOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) return;
+    setError('');
+    setIsLoading(true);
 
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      const res = login(email, password);
-      setMessage(res.message);
-    }, 1000);
-  };
-
-  const handleDemoAdmin = () => {
-    setEmail('admin@auraroast.com');
-    setPassword('roaster2026');
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      login('admin@auraroast.com', 'roaster2026');
-    }, 800);
+    try {
+      // Simulate network request
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      if (mode === 'login') {
+        const success = login(email, password);
+        if (!success) setError('Invalid credentials. Use admin@auraroast.com / admin123 for admin access, or any other for customer.');
+      } else {
+        const success = signup(name, email, password);
+        if (!success) setError('Email already exists');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* BACKDROP */}
-      <div
-        onClick={() => setIsAuthModalOpen(false)}
-        className="absolute inset-0 bg-black/80 backdrop-blur-md animate-fadeIn"
-      />
-
-      {/* MODAL CARD */}
-      <div className="relative w-full max-w-md bg-coffee-950/95 border border-amber-500/30 rounded-3xl p-8 shadow-2xl z-10 space-y-6 backdrop-blur-2xl animate-scaleUp">
-        {/* CLOSE BUTTON */}
-        <button
+    <div 
+      ref={overlayRef}
+      className="fixed inset-0 bg-coffee-950/80 backdrop-blur-md z-[100] hidden items-center justify-center p-4 opacity-0"
+    >
+      <div 
+        ref={modalRef}
+        className="w-full max-w-md glass-panel-elevated rounded-3xl overflow-hidden relative"
+      >
+        <button 
           onClick={() => setIsAuthModalOpen(false)}
-          className="absolute top-5 right-5 p-2 rounded-full hover:bg-coffee-900 text-amber-200/50 hover:text-white transition-colors"
+          className="absolute top-4 right-4 p-2 rounded-full text-amber-200/50 hover:text-amber-400 hover:bg-coffee-900 transition-colors z-10"
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* LOGO BRAND */}
-        <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-500 to-amber-300 p-[1px] mx-auto shadow-lg shadow-amber-500/20">
-            <div className="w-full h-full bg-coffee-950 rounded-full flex items-center justify-center">
-              <Coffee className="w-6 h-6 text-amber-400" />
-            </div>
+        <div className="p-8">
+          <div className="text-center mb-8">
+            <h2 className="font-serif text-3xl font-bold text-stone-100">
+              {mode === 'login' ? 'Welcome Back' : 'Join Aura Roast'}
+            </h2>
+            <p className="text-sm text-amber-100/60 mt-2">
+              {mode === 'login' ? 'Access your orders and preferences.' : 'Create an account to earn rewards.'}
+            </p>
           </div>
-          <h3 className="font-serif text-2xl font-bold text-stone-100">Welcome to Aura Roast</h3>
-          <p className="text-xs text-amber-200/60 font-light">
-            Sign in to unlock exclusive cupping rewards & order tracking
-          </p>
-        </div>
 
-        {/* TAB SWITCHER */}
-        <div className="grid grid-cols-2 p-1 rounded-xl bg-coffee-900/60 border border-amber-500/15">
-          <button
-            type="button"
-            onClick={() => setTab('login')}
-            className={`py-2 rounded-lg text-xs font-semibold transition-all ${
-              tab === 'login'
-                ? 'bg-amber-500 text-coffee-950 font-bold shadow-md'
-                : 'text-amber-200/60 hover:text-amber-100'
-            }`}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('signup')}
-            className={`py-2 rounded-lg text-xs font-semibold transition-all ${
-              tab === 'signup'
-                ? 'bg-amber-500 text-coffee-950 font-bold shadow-md'
-                : 'text-amber-200/60 hover:text-amber-100'
-            }`}
-          >
-            Create Account
-          </button>
-        </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {mode === 'signup' && (
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase tracking-wider text-amber-200/60">Full Name</label>
+                <div className="relative">
+                  <UserPlus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500/50" />
+                  <input 
+                    type="text" 
+                    required
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    className="w-full bg-coffee-900/50 border border-amber-500/20 rounded-xl px-10 py-3 text-sm text-stone-200 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all"
+                  />
+                </div>
+              </div>
+            )}
 
-        {/* FORM */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {tab === 'signup' && (
-            <div>
-              <label className="text-[11px] font-semibold text-amber-300 uppercase tracking-wider block mb-1">
-                Full Name
-              </label>
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-wider text-amber-200/60">Email</label>
               <div className="relative">
-                <UserIcon className="w-4 h-4 text-amber-400 absolute left-3.5 top-3" />
-                <input
-                  type="text"
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500/50" />
+                <input 
+                  type="email" 
                   required
-                  placeholder="Julian Vance"
-                  className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-coffee-900 border border-amber-500/20 text-xs text-amber-100 placeholder-amber-200/30 focus:outline-none focus:border-amber-400"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  className="w-full bg-coffee-900/50 border border-amber-500/20 rounded-xl px-10 py-3 text-sm text-stone-200 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all"
                 />
               </div>
             </div>
-          )}
 
-          <div>
-            <label className="text-[11px] font-semibold text-amber-300 uppercase tracking-wider block mb-1">
-              Email Address
-            </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-amber-400 absolute left-3.5 top-3" />
-              <input
-                type="email"
-                required
-                placeholder="your.email@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-coffee-900 border border-amber-500/20 text-xs text-amber-100 placeholder-amber-200/30 focus:outline-none focus:border-amber-400"
-              />
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-wider text-amber-200/60">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500/50" />
+                <input 
+                  type="password" 
+                  required
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="w-full bg-coffee-900/50 border border-amber-500/20 rounded-xl px-10 py-3 text-sm text-stone-200 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all"
+                />
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label className="text-[11px] font-semibold text-amber-300 uppercase tracking-wider block mb-1">
-              Password
-            </label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-amber-400 absolute left-3.5 top-3" />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                required
-                placeholder="••••••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-coffee-900 border border-amber-500/20 text-xs text-amber-100 placeholder-amber-200/30 focus:outline-none focus:border-amber-400"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3 text-amber-200/50 hover:text-white"
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          {/* REMEMBER ME & FORGOT PASSWORD */}
-          <div className="flex items-center justify-between text-xs text-amber-200/70 pt-1">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="rounded border-amber-500/30 text-amber-500 focus:ring-amber-500/40 bg-coffee-900"
-              />
-              <span>Remember me</span>
-            </label>
-            <a href="#" className="text-amber-400 hover:underline">Forgot password?</a>
-          </div>
-
-          {message && (
-            <p className="text-xs text-emerald-400 font-medium text-center">{message}</p>
-          )}
-
-          {/* SUBMIT BUTTON */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-coffee-950 font-bold text-xs uppercase tracking-wider shadow-xl shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-coffee-950 border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <span>{tab === 'login' ? 'Sign In to Account' : 'Create Account'}</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
+            {error && (
+              <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg p-2 text-center">
+                {error}
+              </p>
             )}
-          </button>
-        </form>
 
-        {/* SOCIAL SIGN IN */}
-        <div className="space-y-3 pt-2 border-t border-coffee-800/80">
-          <div className="text-center text-[10px] text-amber-200/40 uppercase tracking-widest">
-            Or continue with
+            <button 
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-3.5 mt-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-coffee-950 font-bold tracking-widest uppercase flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <div className="w-5 h-5 border-2 border-coffee-950/20 border-t-coffee-950 rounded-full animate-spin"></div>
+              ) : (
+                <>
+                  {mode === 'login' ? <LogIn className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+                  <span>{mode === 'login' ? 'Sign In' : 'Create Account'}</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <button 
+              onClick={() => {
+                setMode(mode === 'login' ? 'signup' : 'login');
+                setError('');
+              }}
+              className="text-xs text-amber-200/60 hover:text-amber-400 transition-colors"
+            >
+              {mode === 'login' ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+            </button>
           </div>
-          <button
-            onClick={handleDemoAdmin}
-            className="w-full py-2.5 rounded-xl bg-coffee-900 hover:bg-coffee-800 border border-amber-500/20 text-amber-200 text-xs font-semibold flex items-center justify-center gap-2 transition-all"
-          >
-            <span>🔐 Quick Sign In as Master Roaster (Admin)</span>
-          </button>
+          
+          {mode === 'login' && (
+             <div className="mt-4 pt-4 border-t border-amber-500/10 text-center">
+              <p className="text-[10px] text-amber-100/40">Demo Admin: admin@auraroast.com / admin123</p>
+             </div>
+          )}
         </div>
       </div>
     </div>

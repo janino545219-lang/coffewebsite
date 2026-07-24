@@ -3,23 +3,23 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 export const FloatingBeans: React.FC = () => {
-  const count = 18;
+  const count = 24; // More beans
   const meshRef = useRef<THREE.InstancedMesh>(null!);
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
   const beans = useMemo(() => {
     return Array.from({ length: count }, () => ({
-      x: (Math.random() - 0.5) * 7,
-      y: (Math.random() - 0.5) * 5 + 0.5,
-      z: (Math.random() - 0.5) * 5 - 1,
+      x: (Math.random() - 0.5) * 8,
+      y: (Math.random() - 0.5) * 6 + 1,
+      z: (Math.random() - 0.5) * 6 - 1.5,
       rx: Math.random() * Math.PI,
       ry: Math.random() * Math.PI,
       rz: Math.random() * Math.PI,
-      rotSpeedX: (Math.random() - 0.5) * 0.015,
-      rotSpeedY: (Math.random() - 0.5) * 0.02,
-      floatSpeed: 0.8 + Math.random() * 1.2,
+      rotSpeedX: (Math.random() - 0.5) * 0.02,
+      rotSpeedY: (Math.random() - 0.5) * 0.025,
+      floatSpeed: 0.5 + Math.random() * 1.5,
       floatOffset: Math.random() * Math.PI * 2,
-      scale: 0.18 + Math.random() * 0.12,
+      scale: 0.15 + Math.random() * 0.15, // More size variation for depth of field illusion
     }));
   }, [count]);
 
@@ -31,11 +31,15 @@ export const FloatingBeans: React.FC = () => {
       b.rx += b.rotSpeedX;
       b.ry += b.rotSpeedY;
 
-      const floatY = b.y + Math.sin(t * b.floatSpeed + b.floatOffset) * 0.25;
+      // Complex floating path (figure-8-like)
+      const floatY = b.y + Math.sin(t * b.floatSpeed + b.floatOffset) * 0.3;
+      const floatX = b.x + Math.cos(t * b.floatSpeed * 0.5 + b.floatOffset) * 0.2;
 
-      dummy.position.set(b.x, floatY, b.z);
+      dummy.position.set(floatX, floatY, b.z);
       dummy.rotation.set(b.rx, b.ry, b.rz);
-      dummy.scale.set(b.scale, b.scale * 1.5, b.scale * 0.8);
+      
+      // Elongated shape to look more like coffee beans
+      dummy.scale.set(b.scale * 0.9, b.scale * 1.4, b.scale * 0.7);
       dummy.updateMatrix();
 
       meshRef.current.setMatrixAt(i, dummy.matrix);
@@ -45,12 +49,13 @@ export const FloatingBeans: React.FC = () => {
   });
 
   return (
-    <instancedMesh ref={meshRef} args={[undefined, undefined, count]} castShadow>
-      <sphereGeometry args={[0.5, 12, 12]} />
+    <instancedMesh ref={meshRef} args={[undefined, undefined, count]} castShadow receiveShadow>
+      <sphereGeometry args={[0.5, 24, 24]} />
       <meshStandardMaterial
-        color="#2b1810"
-        roughness={0.4}
+        color="#2b1408"
+        roughness={0.6}
         metalness={0.1}
+        bumpScale={0.02}
       />
     </instancedMesh>
   );

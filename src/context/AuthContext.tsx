@@ -9,6 +9,7 @@ interface AuthContextType {
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
   login: (email: string, pass: string) => { success: boolean; message: string };
+  signup: (name: string, email: string, pass: string) => { success: boolean; message: string };
   logout: () => void;
 }
 
@@ -54,6 +55,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setViewMode('public');
   };
 
+  const signup = (name: string, email: string, _pass: string) => {
+    const customerUser: User = {
+      name,
+      email,
+      role: 'customer',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+    };
+    setUser(customerUser);
+    setIsAuthModalOpen(false);
+    return { success: true, message: 'Account created successfully.' };
+  };
+
+
   return (
     <AuthContext.Provider
       value={{
@@ -64,6 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthModalOpen,
         setIsAuthModalOpen,
         login,
+        signup,
         logout,
       }}
     >
